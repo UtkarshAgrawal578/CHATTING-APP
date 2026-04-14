@@ -7,14 +7,15 @@ function App() {
 
   return (
     <>
-      {!user ? (
+      {/* {!user ? (
         <Auth setUser={(u) => {
           setUser(u);
           localStorage.setItem("user", u);
         }} />
       ) : (
         <Chat user={user} setUser={setUser} />
-      )}
+      )} */}
+      <Chat/>
     </>
   );
 }
