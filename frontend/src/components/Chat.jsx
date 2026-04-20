@@ -8,7 +8,9 @@ function Chat({ user, setUser }) {
   const [messages, setMessages] = useState([]);
   const [selectedUser, setSelectedUser] = useState("");
   const [users, setUsers] = useState([]);
+  const [typingUser, setTypingUser] = useState("");
   const chatEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   // =========================
   // ✅ REGISTER USER (ONLINE)
@@ -29,6 +31,26 @@ function Chat({ user, setUser }) {
 
     return () => {
       socket.off("online_users");
+    };
+  }, []);
+
+  // =========================
+  // ✅ TYPING INDICATOR
+  // =========================
+  useEffect(() => {
+    socket.on("show_typing", (data) => {
+      // Safely handles both string payloads and object payloads ({ user1, user2 })
+      const username = typeof data === "string" ? data : data?.user1 || data?.username;
+      setTypingUser(username);
+    });
+
+    socket.on("hide_typing", () => {
+      setTypingUser("");
+    });
+
+    return () => {
+      socket.off("show_typing");
+      socket.off("hide_typing");
     };
   }, []);
 
@@ -87,6 +109,12 @@ function Chat({ user, setUser }) {
     });
 
     setText("");
+
+    // FIX: Immediately stop the typing indicator when a message is sent
+    socket.emit("stop_typing", { user1: user, user2: selectedUser });
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
   };
 
   // =========================
@@ -321,6 +349,13 @@ function Chat({ user, setUser }) {
           )}
           <div ref={chatEndRef}></div>
         </div>
+        
+        {/* FIX: Ensure we only show typing for the currently selected user */}
+        {typingUser && typingUser === selectedUser && (
+          <div className="text-sm text-gray-400 px-4 pb-2">
+            {typingUser} is typing...
+          </div>
+        )}
 
         {/* INPUT */}
         {selectedUser && (
@@ -334,7 +369,38 @@ function Chat({ user, setUser }) {
                 className="flex-1 bg-transparent text-gray-200 placeholder-gray-500 outline-none px-2 text-[14px] md:text-[15px]"
                 placeholder="Message into the void..."
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setText(value);
+
+                  if (!selectedUser) return;
+
+                  // FIX: If user clears the input box completely via backspace, stop typing
+                  if (value.trim() === "") {
+                    socket.emit("stop_typing", { user1: user, user2: selectedUser });
+                    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                    return;
+                  }
+
+                  // emit typing
+                  socket.emit("typing", {
+                    user1: user,
+                    user2: selectedUser,
+                  });
+
+                  // clear previous timeout
+                  if (typingTimeoutRef.current) {
+                    clearTimeout(typingTimeoutRef.current);
+                  }
+
+                  // stop typing after delay
+                  typingTimeoutRef.current = setTimeout(() => {
+                    socket.emit("stop_typing", {
+                      user1: user,
+                      user2: selectedUser,
+                    });
+                  }, 1000);
+                }}
                 onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               />
               

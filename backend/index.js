@@ -3,7 +3,7 @@ require("dotenv").config();
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
-
+const PORT = process.env.PORT || 5000;
 const connectDB = require("./config/db");
 const Message = require("./models/Message");
 
@@ -15,7 +15,9 @@ const app = express();
 connectDB();
 
 app.use(cors({
-  origin: "http://localhost:5173"
+  origin: ["http://localhost:5173", "https://chatting-app-beryl-eight.vercel.app/"],
+  methods: ["GET", "POST"],
+  credentials: true
 }));
 app.use(express.json());
 
@@ -27,7 +29,8 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "https://chatting-app-beryl-eight.vercel.app/"],
+    methods: ["GET", "POST"]
   },
 });
 
@@ -49,7 +52,16 @@ io.on("connection", (socket) => {
     // Send updated user list to all clients
     io.emit("online_users", Object.keys(onlineUsers));
   });
-
+  //user is typing
+  socket.on("typing",({user1,user2})=>{
+       const roomId=[user1,user2].sort().join("_");
+       io.to(roomId).emit("show_typing",user1);
+})
+  //user stops typing
+  socket.on("stop_typing",({user1,user2})=>{
+      const roomId=[user1,user2].sort().join("_");
+      io.to(roomId).emit("hide_typing");
+  })
   // ============================
   // ✅ JOIN PRIVATE ROOM
   // ============================
@@ -125,6 +137,6 @@ io.on("connection", (socket) => {
   });
 });
 // Start server
-server.listen(5000, () => {
-  console.log("Server running on port 5000");
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
