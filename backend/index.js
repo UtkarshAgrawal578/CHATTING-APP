@@ -24,6 +24,9 @@ app.use(express.json());
 // ✅ Use Routes
 app.use("/api/auth", authRoutes);
 
+app.get("/", (req, res) => {
+  res.send("Backend is running 🚀");
+});
 
 const server = http.createServer(app);
 
