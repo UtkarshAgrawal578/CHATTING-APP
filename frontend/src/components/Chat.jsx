@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
-const socket = io("https://chat-backend-qocw.onrender.com");
+const socket = io("https://chat-backend-qocw.onrender.com", {
+  transports: ["websocket"], // 🔥 IMPORTANT
+});
 
 function Chat({ user, setUser }) {
   const [text, setText] = useState("");

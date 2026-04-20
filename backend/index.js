@@ -15,9 +15,7 @@ const app = express();
 connectDB();
 
 app.use(cors({
-  origin: ["http://localhost:5173", "https://chatting-app-beryl-eight.vercel.app/"],
-  methods: ["GET", "POST"],
-  credentials: true
+  origin: "*",
 }));
 app.use(express.json());
 
@@ -32,8 +30,8 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "https://chatting-app-beryl-eight.vercel.app/"],
-    methods: ["GET", "POST"]
+    origin: "*",   // 🔥 TEMPORARY FIX
+    methods: ["GET", "POST"],
   },
 });
 
