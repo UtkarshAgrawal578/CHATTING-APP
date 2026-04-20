@@ -17,8 +17,8 @@ function Auth({ setUser }) {
     setIsLoading(true);
     try {
       const url = isLogin
-        ? "http://localhost:5000/api/auth/login"
-        : "http://localhost:5000/api/auth/signup";
+        ? "https://chat-backend-qocw.onrender.com/api/auth/login"
+        : "https://chat-backend-qocw.onrender.com/api/auth/signup";
 
       const res = await axios.post(url, { username, password });
 
